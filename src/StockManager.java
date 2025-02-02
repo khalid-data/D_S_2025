@@ -8,22 +8,21 @@ public class StockManager {
     final static int INTERNAL_SEN = 0;
     //used for implementation purpose
 
-    InternalNode root;
+    Stock root;
 
     public StockManager() {
-
+        // what should be here?
     }
 
     // 1. Initialize the system
     //init- create empty 2-3 tree
     public void initStocks() {
-        InternalNode nRoot = new InternalNode();
-        nRoot.setKey("");// check for problems
+        Stock nRoot = new Stock();
 
         nRoot.left.setLeafCheck(LEFT_SEN);
         root.middle.setLeafCheck(RIGHT_SEN);
         //should we fill stockId?
-        root.setLeafCheck(INTERNAL_SEN);
+        root.setLeafCheck(INTERNAL_SEN);//in lecture we did +infinity
 
         root.left.setParent(root);
         root.middle.setParent(root);
@@ -31,7 +30,7 @@ public class StockManager {
         this.root = nRoot;
     }
 
-    public InternalNode search(InternalNode x, String k){
+    public Stock search(Stock x, String k){
         if (x.IsLeaf()){
             if(x.stockId.equals(k)){
                 return x;
@@ -43,33 +42,33 @@ public class StockManager {
             return search(x.left ,k);
         }
 
-        else if(k.compareTo(x.middle.stockId) <= 0) {
-            return search(x.middle, k);
+        else if(k.compareTo(x.mid.stockId) <= 0) {
+            return search(x.mid, k);
         }
         return search(x.right ,k);
     }
 
-    public InternalNode Min(){
-        InternalNode x = this.root;
+    public Stock Min(){
+        Stock x = this.root;
         while (!x.IsLeaf()){
             x = x.left;
         }
-        x = x.parent.middle;
+        x = x.parent.mid;
         if(x.leafCheck != LEFT_SEN || x.leafCheck != RIGHT_SEN){
             return x;
         }
         return null;
     }
 
-    public InternalNode Successor(InternalNode x){
-       InternalNode z = x.parent;
-       InternalNode y;
-       while(x == z.right || (z.right == null && x==z.middle)){
+    public Stock Successor(Stock x){
+       Stock z = x.parent;
+       Stock y;
+       while(x == z.right || (z.right == null && x==z.mid)){
            x=z;
            z=z.parent;
        }
        if(x == z.left){
-           y = z.middle;
+           y = z.mid;
        }
        else{
            y =z.right;
@@ -83,20 +82,20 @@ public class StockManager {
        return null;
     }
 
-    public void updateKey(InternalNode x){
+    public void updateKey(Stock x){
 
         x.stockId = x.left.stockId;
-        if(x.middle.stockId != null){
-            x.stockId = x.middle.stockId;
+        if(x.mid.stockId != null){
+            x.stockId = x.mid.stockId;
         }
         if(x.right != null){
             x.stockId = x.right.stockId;
         }
     }
 
-    public void setChildren(InternalNode x, InternalNode l, InternalNode m, InternalNode r){
+    public void setChildren(Stock x, Stock l, Stock m, Stock r){
         x.left = l;
-        x.middle = m;
+        x.mid = m;
         x.right = r;
         l.parent = x;
         if(m.stockId != null){
@@ -108,10 +107,10 @@ public class StockManager {
         updateKey(x);
     }
 
-    public InternalNode Insert_And_Split(InternalNode x,InternalNode z) {
-        InternalNode l = x.left;
-        InternalNode m = x.middle;
-        InternalNode r = x.right;
+    public Stock Insert_And_Split(Stock x,Stock z) {
+        Stock l = x.left;
+        Stock m = x.mid;
+        Stock r = x.right;
 
         if (r.stockId == null) {
             if (z.stockId.compareTo(l.stockId) < 0) {
@@ -124,7 +123,7 @@ public class StockManager {
             return null;
         }
 
-        InternalNode y = new InternalNode();
+        Stock y = new Stock();
         if (z.stockId.compareTo(l.stockId) < 0) {
             setChildren(x, z, l, null);
             setChildren(y, m, r, null);
@@ -143,18 +142,18 @@ public class StockManager {
 
     }   
 
-    public void insert(InternalNode z){
-        InternalNode y = this.root;
+    public void insert(Stock z){
+        Stock y = this.root;
         while(!y.isLeaf) {
             if (z.stockId.compareTo(y.left.stockId) <= 0) {
                 y = y.left;
-            } else if (z.stockId.compareTo(y.middle.stockId) <= 0) {
-                y = y.middle;
+            } else if (z.stockId.compareTo(y.mid.stockId) <= 0) {
+                y = y.mid;
             } else {
                 y = y.right;
             }
         }
-        InternalNode x = y.parent;
+        Stock x = y.parent;
         z = Insert_And_Split(x, z);
         while(x != this.root){
             x = x.parent;
@@ -166,49 +165,49 @@ public class StockManager {
             }
         }
         if(z != null){
-            InternalNode w = new InternalNode();
+            Stock w = new Stock();
             setChildren(w, x, z, null);
             this.root = w;
         }
     }
     
-    public InternalNode borrowOrMerge(InternalNode y){
-        InternalNode z = y.parent;
-        InternalNode x = new InternalNode();
+    public Stock borrowOrMerge(Stock y){
+        Stock z = y.parent;
+        Stock x = new Stock();
         if(y == z.left) {
-            x = z.middle;
+            x = z.mid;
 
             if (x.right != null) {
                 setChildren(y, y.left, x.left, null);
-                setChildren(x, x.middle, x.right, null);
+                setChildren(x, x.mid, x.right, null);
             } else {
-                setChildren(x, y.left, x.left, x.middle);
+                setChildren(x, y.left, x.left, x.mid);
                 // delete(y); // not sure if needed can might be better to del this line and let java handle
                 // check the use for dlete in the lectures.
                 setChildren(z, x, x.right, null);
             }
             return z;
         }
-        if (y == z.middle){
+        if (y == z.mid){
             x = z.left;
             if (x.right != null){
                 setChildren(y ,x.right, y.left, null);
-                setChildren(x, x.left, x.middle, null);
+                setChildren(x, x.left, x.mid, null);
             }
             else{
-                setChildren(x, x.left, x.middle, y.left);
+                setChildren(x, x.left, x.mid, y.left);
                 //delete(y);// check the use for dlete in the lectures.
                 setChildren(z, x, z.right,null);
             }
             return z;
         }
-        x = z.middle;
+        x = z.mid;
         if(x.right != null){
             setChildren(y,x.right,y.left,null);
-            setChildren(x,x.left,x.middle,null);
+            setChildren(x,x.left,x.mid,null);
         }
         else {
-            setChildren(x,x.left,x.middle,y.left);
+            setChildren(x,x.left,x.mid,y.left);
             //delete(y);// check the use for dlete in the lectures.
             setChildren(z,z.left,x,null);
         }
@@ -216,19 +215,19 @@ public class StockManager {
     }
 
     // check the use for dlete in the lectures.
-    public void delete(InternalNode x){
-        InternalNode y = x.parent;
+    public void delete(Stock x){
+        Stock y = x.parent;
         if(x == y.left){
-            setChildren(y,y.middle,y.right,null);
+            setChildren(y,y.mid,y.right,null);
         }
-        else if(x == y.middle){
+        else if(x == y.mid){
             setChildren(y,y.left,y.right,null);
         }
         else{
-            setChildren(y,y.left,y.middle,null);
+            setChildren(y,y.left,y.mid,null);
         }
         while (y != null) {
-            if(y.middle != null){
+            if(y.mid != null){
                 updateKey(y);
                 y= y.parent;
             }

@@ -1,15 +1,29 @@
-public class Stock extends InternalNode{
+public class Stock{
 
     final static Long MAX = Long.MAX_VALUE;
     final static Long MIN = Long.MIN_VALUE;
 
+    final static int RIGHT_SEN = 1;
+    final static int LEFT_SEN = -1;
+
     String stockId;
+    Stock left,mid, right, parent;
+    int leafCheck;
+    boolean isLeaf;
+    
+    
     Float startingPrice;
     Long startTimeStamp;
     Long timeStamp;
     Float currPrice;
 
     priceDef root;
+    
+    public Stock(){
+        this.stockId = "";
+        this.startingPrice = 0f;
+        this.timeStamp = 0L;
+    }
 
     public Stock(String stockId,Long timeStamp,Float startingPrice){
         this.stockId = stockId;
@@ -17,6 +31,25 @@ public class Stock extends InternalNode{
         this.timeStamp = timeStamp;
     }
 
+    public void setLeft(Stock left) {
+        this.left = left;
+    }
+
+    public void setRight(Stock right) {
+        this.right = right;
+    }
+
+    public void setMid(Stock mid) {
+        this.mid = mid;
+    }
+
+    public void setParent(Stock parent) {
+        this.parent = parent;
+    }
+
+    public void setLeafCheck(int leafCheck) {
+        this.leafCheck = leafCheck;
+    }
 
     public String getStockId(){
         return this.stockId;
@@ -123,6 +156,12 @@ public class Stock extends InternalNode{
         updateKey(x);
     }
 
+    public boolean IsLeaf(){
+        if (this.left.leafCheck == LEFT_SEN && this.middle.leafCheck == RIGHT_SEN){
+            return true;
+        }
+        return false;
+    }
 
     public priceDef Insert_And_Split(priceDef x,priceDef z) {
         priceDef l = x.left;
@@ -187,7 +226,6 @@ public class Stock extends InternalNode{
             this.root = w;
         }
     }
-
 
     public priceDef borrowOrMerge(priceDef y){
         priceDef z = y.p;
