@@ -5,11 +5,15 @@ public class Stock{
 
     final static int RIGHT_SEN = 1;
     final static int LEFT_SEN = -1;
+    final static int INTERNAL_SEN = 0;
+
 
     String stockId;
     Stock left,mid, right, parent;
     int leafCheck;
     boolean isLeaf;
+
+    int subTreeSize;
     
     
     Float startingPrice;
@@ -18,39 +22,41 @@ public class Stock{
     Float currPrice;
 
     priceDef root;
-    
+
+    //make new internal node
     public Stock(){
         this.stockId = "";
         this.startingPrice = 0f;
         this.timeStamp = 0L;
+        this.isLeaf = false;
+        this.leafCheck = INTERNAL_SEN;
     }
+
 
     public Stock(String stockId,Long timeStamp,Float startingPrice){
         this.stockId = stockId;
         this.startingPrice = startingPrice;
         this.timeStamp = timeStamp;
+        this.isLeaf = true;
+        this.subTreeSize = 1;
+        //init
     }
 
     public void setLeft(Stock left) {
         this.left = left;
     }
-
     public void setRight(Stock right) {
         this.right = right;
     }
-
     public void setMid(Stock mid) {
         this.mid = mid;
     }
-
     public void setParent(Stock parent) {
         this.parent = parent;
     }
-
     public void setLeafCheck(int leafCheck) {
         this.leafCheck = leafCheck;
     }
-
     public String getStockId(){
         return this.stockId;
     }
@@ -157,7 +163,7 @@ public class Stock{
     }
 
     public boolean IsLeaf(){
-        if (this.left.leafCheck == LEFT_SEN && this.middle.leafCheck == RIGHT_SEN){
+        if (this.left.leafCheck == LEFT_SEN && this.mid.leafCheck == RIGHT_SEN){
             return true;
         }
         return false;

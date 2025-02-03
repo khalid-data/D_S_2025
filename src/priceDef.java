@@ -12,6 +12,16 @@ public class priceDef{
         this.timeStamp = null;
     }
 
+    public priceDef(Long timeStamp, Float priceChange) {
+        this.timeStamp = timeStamp;
+        this.priceChange = priceChange;
+
+        this.left = new priceDef();
+        this.mid = new priceDef();
+        this.left.timeStamp = MIN;
+        this.mid.timeStamp = MAX;
+    }
+
     int leafCheck;// infinity if the node is a leaf, or 1 if internal node
     boolean isLeaf;
 
