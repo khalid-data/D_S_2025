@@ -36,6 +36,7 @@ public class Stock{
     public Stock(String stockId,Long timeStamp,Float startingPrice){
         this.stockId = stockId;
         this.startingPrice = startingPrice;
+        this.currPrice = startingPrice;
         this.timeStamp = timeStamp;
         this.isLeaf = true;
         this.subTreeSize = 1;
@@ -205,6 +206,7 @@ public class Stock{
     }
 
     public void insert(priceDef z){
+        this.currPrice += z.priceChange;
         priceDef y = this.root;
         while(!y.isLeaf) {
             if (z.timeStamp.compareTo(y.left.timeStamp) <= 0) {
@@ -277,6 +279,7 @@ public class Stock{
     }
 
     public void delete(priceDef x){
+        this.currPrice -= x.priceChange;
         priceDef y = x.p;
         if(x == y.left){
             setChildren(y,y.mid,y.right,null);
@@ -305,5 +308,7 @@ public class Stock{
             }
         }
     }
+
 }
+
 

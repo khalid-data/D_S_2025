@@ -1,333 +1,275 @@
-import java.net.PortUnreachableException;
-
 
 public class StockManager {
 
-    //sentinel to know if leaf
+    //used for implementation purpose
     final static int RIGHT_SEN = 1;
     final static int LEFT_SEN = -1;
     final static int INTERNAL_SEN = 0;
     final static Float MAXFLOAT = Float.MAX_VALUE;
     final static Float MINFLOAT = Float.MIN_VALUE;
-    //used for implementation purpose
 
-    Stock root;
-    StockPriceNode priceRoot; // Root of the tree sorted by price
+
+    TwoThreeTree <Stock, String> Stocks;
+    TwoThreeTree<Stock, Float> Prices;
 
 
     public StockManager() {
         // what should be here?
+        this.initStocks();
     }
 
     // 1. Initialize the system
     //init- create empty 2-3 tree
     public void initStocks() {
-
-        //make new internal node
-        Stock x = new Stock();
-
-        // make left and mid stock IDS ""
-        x.left = new Stock();
-        x.mid = new Stock();
-
-        x.left.setLeafCheck(LEFT_SEN);
-        x.mid.setLeafCheck(RIGHT_SEN);
-        x.left.subTreeSize = 0;
-        x.mid.subTreeSize = 0;
-        //should we fill stockId?
-
-        x.left.setParent(x);
-        x.mid.setParent(x);
-
-        this.root = x;
-        this.priceRoot = null;
-        this.initStockPrices();
+        Stocks = new TwoThreeTree<Stock, String>(0);
+        Prices = new TwoThreeTree<Stock, Float>(1);
 
     }
 
-    public Stock search(Stock x, String k){
-        if (x.IsLeaf()){
-            if(x.stockId.equals(k)){
-                return x;
-            }
-            else return null;
-        }
-
-        if(k.compareTo(x.left.stockId) <= 0){
-            return search(x.left ,k);
-        }
-
-        else if(k.compareTo(x.mid.stockId) <= 0) {
-            return search(x.mid, k);
-        }
-        return search(x.right ,k);
+    //find Node with stock with the stockid given starts from the stocks tree root
+    public Node<Stock,String> search( String k){//should take a node
+        if(this.Stocks.root.key == null){return null;}
+        if(this.Stocks.root.key.equals(k)){return this.Stocks.root;}
+        return this.Stocks.Search(this.Stocks.root, k);
     }
 
-    public Stock Min(){
-        Stock x = this.root;
-        while (!x.IsLeaf()){
-            x = x.left;
-        }
-        x = x.parent.mid;
-        if(x.leafCheck != LEFT_SEN || x.leafCheck != RIGHT_SEN){// need to check only if x.leafCheck is 1
-            return x;
-        }
-        return null;
-    }
 
-    public Stock Successor(Stock x){
-       Stock z = x.parent;
-       Stock y;
-       while(x == z.right || (z.right == null && x==z.mid)){
-           x=z;
-           z=z.parent;
-       }
-       if(x == z.left){
-           y = z.mid;
-       }
-       else{
-           y =z.right;
-       }
-       while(!y.IsLeaf()){
-           y=y.left;
-       }
-       if(y.leafCheck == INTERNAL_SEN){
-           return y;
-       }
-       return null;
-    }
-
-    public void updateKey(Stock x){
-
-        x.stockId = x.left.stockId;
-        if(x.mid.stockId != null){
-            x.stockId = x.mid.stockId;
-        }
-        if(x.right != null){
-            x.stockId = x.right.stockId;
-        }
-    }
-
-    public void setChildren(Stock x, Stock l, Stock m, Stock r){
-        x.left = l;
-        x.mid = m;
-        x.right = r;
-        l.parent = x;
-        x.subTreeSize = x.left.subTreeSize;
-        if(m.stockId != null){
-            m.parent = x;
-        }
-        if(r.stockId != null){
-            r.parent = x;
-        }
-        updateKey(x);
-    }
-
-    public Stock Insert_And_Split(Stock x,Stock z) {
-        Stock l = x.left;
-        Stock m = x.mid;
-        Stock r = x.right;
-
-        //if x has only two children:
-        //check were it should be added
-        if (r == null) {// error may occur
-            if (z.stockId.compareTo(l.stockId) < 0) {
-                setChildren(x, z, l, m);
-            } else if (z.stockId.compareTo(m.stockId) < 0) {
-                setChildren(x, l, z, m);
-            } else {
-                setChildren(x, l, m, z);
-            }
-            return null;
-        }
-
-        //X has 3 children
-        //must split it and return the new internal node y
-        Stock y = new Stock();
-
-        if (z.stockId.compareTo(l.stockId) < 0) {
-            setChildren(x, z, l, null);
-            setChildren(y, m, r, null);
-        } else if (z.stockId.compareTo(m.stockId) < 0) {
-            setChildren(x, l, z, null);
-            setChildren(y, m, r, null);
-        } else if (z.stockId.compareTo(r.stockId) < 0) {
-            setChildren(x, l, m, null);
-            setChildren(y, z, r, null);
-        }
-        else {
-            setChildren(x, l, m, null);
-            setChildren(y, r, z, null);
-        }
-        return y;
-
-    }   
-
-    public void insert(Stock z){
-        Stock y = this.root;
-        //look for where y should be inserted
-        while(!y.isLeaf) {
-            if (z.stockId.compareTo(y.left.stockId) <= 0) {
-                y = y.left;
-            } else if (z.stockId.compareTo(y.mid.stockId) <= 0) {
-                y = y.mid;
-            } else {
-                y = y.right;
-            }
-        }
-        //z should be inserted as child of x:
-        Stock x = y.parent;
-        z = Insert_And_Split(x, z);
-        while(x != this.root){
-            x = x.parent;
-            if(z != null){
-                z = Insert_And_Split(x, z);
-            }
-            else{
-                updateKey(x);
-            }
-        }
-        // make new root (internal node)
-        if(z != null){
-            Stock w = new Stock();
-            setChildren(w, x, z, null);
-            this.root = w;
-        }
-    }
-    
-    public Stock borrowOrMerge(Stock y){
-        // y has one child y.left
-        //borrow a child from sibling x or merge y with x
-        Stock z = y.parent;
-        Stock x;
-        if(y == z.left) {
-            x = z.mid;
-
-            if (x.right != null) {
-                setChildren(y, y.left, x.left, null);
-                setChildren(x, x.mid, x.right, null);
-            } else {
-                setChildren(x, y.left, x.left, x.mid);
-                // delete(y); // not sure if needed can might be better to del this line and let java handle
-                // check the use for dlete in the lectures.
-                setChildren(z, x, x.right, null);
-            }
-            return z;
-        }
-        if (y == z.mid){
-            x = z.left;
-            if (x.right != null){
-                setChildren(y ,x.right, y.left, null);
-                setChildren(x, x.left, x.mid, null);
-            }
-            else{
-                setChildren(x, x.left, x.mid, y.left);
-                //delete(y);// check the use for delete in the lectures.
-                setChildren(z, x, z.right,null);
-            }
-            return z;
-        }
-        x = z.mid;
-        if(x.right != null){
-            setChildren(y,x.right,y.left,null);
-            setChildren(x,x.left,x.mid,null);
-        }
-        else {
-            setChildren(x,x.left,x.mid,y.left);
-            setChildren(z,z.left,x,null);
-        }
-        return z;
-    }
-
-    // check the use for dlete in the lectures.
-    public void delete(Stock x){
-        Stock y = x.parent;
-        if(x == y.left){
-            setChildren(y,y.mid,y.right,null);
-        }
-        else if(x == y.mid){
-            setChildren(y,y.left,y.right,null);
-        }
-        else{
-            setChildren(y,y.left,y.mid,null);
-        }
-        while (y != null) {
-            if(y.mid != null){
-                updateKey(y);
-                y= y.parent;
-            }
-            else{
-                if(y != this.root){
-                    y = borrowOrMerge(y);
-                }
-                else{
-                    this.root = y.left;
-                    y.left.parent = null;
-                    return;
-                }
-
-            }
-        }
-    }
-    
 
     // 2. Add a new stock
+    //check f suck stock exists -> exception
+    //make new stock
+    //make a node x for the stocks tree and adds it
+    // search for node y with same price in price tree:
+    // if exists such y add x  to the list of y
     public void addStock(String stockId, long timestamp, Float price) {
 
         // in case the stock already exists --> THROW EXCEPTION
-         if(search(this.root, stockId) != null){
-             throw new IllegalArgumentException("stock already exists");
-         }
+        if( this.Stocks.root.key != null) {
+            if (this.search(stockId) != null) {
+                throw new IllegalArgumentException("stock already exists");
+            }
+        }
 
-         //make new object stock and insert in stock manager
-         Stock stock = new Stock(stockId,timestamp,price);//update curr price
-        StockPriceNode priceNode = new StockPriceNode(price, stockId);
-         stock.initPrices();
-         this.insert(stock);
-         this.insert(priceNode);
+        //make new object stock and insert in stock manager
+        Stock stock = new Stock(stockId,timestamp,price);
+        stock.initPrices();
+        Node<Stock,String> x = new Node<>(stock,stockId);
+        this.Stocks.insertNode(x);
+        Node<Stock,Float> y = this.Prices.Search(this.Prices.root, price);
+        if(y == null){
+            y = new Node<>(stock,price);
+            y.isLeaf = true;
+            this.Prices.insertNode(y);
+        }
+        else {
+            y.list.addNode(new Node<>(stock,price));
+        }
     }
 
     // 3. Remove a stock
+    // if no suck stock exists throw exception
+    //if exists search for NODE x that has it in the stocks tree
+    // remove it from stocks tree
+    //search for Node y in prices tree with the same price:
+    //if it has the same stock: 1. its list is empty -> remove it
+    //2. the list is not empty -> pop the list head z, save its stock in y.stock
     public void removeStock(String stockId) {
-        if(search(this.root, stockId) == null){
+        Node<Stock,String> x = this.search(stockId);
+        if(x == null){
             throw new IllegalArgumentException("stock doesnt exist");
         }
-        Stock x = search(root,stockId );
-        delete(x);
-
-        float currPrice = x.currPrice;
-        StockPriceNode y = search(priceRoot ,currPrice);
-        delete(y);
+        else {
+            this.Stocks.delete(x);
+            //find NODE with same price
+            Node<Stock,Float> y = this.Prices.Search(this.Prices.root, x.data.currPrice);
+            //if it has only the head in the list u can delete the node
+            if (y.list.head.next == null) {
+                this.Prices.delete(y);
+            }
+            else {//delete x from the list
+                x.next.prev = x.prev;
+                x.prev.next = x.next;
+            }
+        }
     }
 
     // 4. Update a stock price
+    //if stock doesn't exist throw exception
+    //find node x in stocks tree, save the currprice in temp and update the price (add price in pricetree of the stock and change currprice)
+    //make new node z for prices tree to be added later (its price is curr + pricedef)
+    //find Node y in prices tree with price == temp,
+    // case 1: y list has only the head -> delete y
+    //case 2: delete node x from y's list
+    //add node z to prices tree
     public void updateStock(String stockId, long timestamp, Float priceDifference) {
-    // add code here    
+        if(search(stockId) == null){
+            throw new IllegalArgumentException("stock doesnt exist");
+        }
+        Node<Stock, String> x = this.Stocks.Search(this.Stocks.root, stockId);
+        Float temp = x.data.currPrice;
+        priceDef update = new priceDef(timestamp, priceDifference);
+        x.data.insert(update);
+        Node<Stock, Float> y = this.Prices.Search(this.Prices.root, temp);
+        if(y!= null){
+            if(y.list.head.next == null){
+                this.Prices.delete(y);
+            }
+            else {
+                x.next.prev = x.prev;
+                x.prev.next = x.next;
+            }
+        }
+        Node<Stock, Float> z = new Node<>(x.data, temp+priceDifference);
     }
+
 
     // 5. Get the current price of a stock
     public Float getStockPrice(String stockId) {
-        if(search(this.root, stockId) == null){
+        if(search(stockId) == null){
             throw new IllegalArgumentException("stock doesnt exist");
         }
-        return search(this.root, stockId).currPrice;
+        return search(stockId).data.currPrice;
     }
 
+
     // 6. Remove a specific timestamp from a stock's history
+    //search for it in the stocks tree
+    //delete it (in delete method in stock the curr price changes)
     public void removeStockTimestamp(String stockId, long timestamp) {
-    // add code here
+        Stock x =search(stockId).data;
+        if(x == null ){
+            throw new IllegalArgumentException("stock doesnt exist");
+        }
+        if(x.search(x.root,timestamp) == null ){
+            throw new IllegalArgumentException("timestamp doesnt exist");
+        }
+        x.delete(x.search(x.root,timestamp));
     }
 
     // 7. Get the amount of stocks in a given price range
+    //find if exists node with price 2, if not find the biggest node with the price smaller than price2 (node t)
+    //find if exists node with price 1, if not find the  smallest node with price bigger than price1 (Node x\p)
+    //travel from x to y nd count the stocks
+    //do an inorder count (add the size of the list for each node) from x to y in prices tree
     public int getAmountStocksInPriceRange(Float price1, Float price2) {
-    // add code here
+
+
+        Node<Stock, Float> t1;
+        Node<Stock, Float> p2;
+        Node<Stock, Float> y = this.Prices.root;
+
+        //find node x where price 1 would be inserted
+        //case 1: successor is child of x
+        // case 2: successor is x
+        //look for where a node with price2 should be inserted
+        while (!y.isLeaf) {
+            if (price1 <  y.leftPrice.key) {
+                y = y.leftPrice;
+            }
+            else if (price2 < y.midPrice.key) {
+                y = y.midPrice;
+            }
+            else {
+                y = y.rightPrice;
+            }
+        }
+
+        Node<Stock, Float> x = y.parentPrice;
+        //case 1
+        if(price2 >= x.leftPrice.key ){ t1= x.leftPrice;}
+        else if(price2 >= x.midPrice.key){ t1= x.leftPrice;}
+        else if(price2 >= x.rightPrice.key){ t1= x.leftPrice;}
+        else t1=x;
+        t1 = this.Prices.Search(this.Prices.root, t1.key);
+        return count(t1, price2);
+        //z should be inserted as child of x:
+    }
+
+    public int count(Node<Stock, Float> x, Float price2){
+
+        int count = 0;
+        if (x.isLeaf() && x.key <= price2 && x.visited == 0) {
+            count += x.list.size;
+            x.visited = 1;
+            if(x==x.parentPrice.leftPrice){// left child
+                if (x.parentPrice.rightPrice== null && x.parentPrice.midPrice != null){count += count(x.parentPrice.midPrice, price2);}
+                else if (x.parentPrice.midPrice != null){count += count(x.parentPrice.midPrice, price2) +count(x.parentPrice.rightPrice, price2);}
+            }
+        }
+        else if (x.isLeaf() && x.visited == 1  ) {x.visited = 0;}
+
+
+        else {// not a leaf
+            if (x.leftPrice != null && x.visited == 0) {
+                count += count(x.leftPrice, price2);
+            }
+            else if(x.leftStock != null && x.visited == 1){x.visited = 0;}
+
+            if (x.midPrice != null && x.visited == 0) {
+            }
+            else if(x.midStock != null && x.visited == 1){x.visited = 0;}
+
+            if (x.rightPrice != null && x.visited == 0) {
+                count += count(x.rightPrice, price2);
+            }
+            else if(x.rightStock != null && x.visited == 1){x.visited = 0;}
+        }
+        return count;
     }
 
     // 8. Get a list of stock IDs within a given price range
+    // get amount stock in the range
+    // make new array
+    //find if exists node with price 1, if not find the  smallest node with price bigger than price1 (Node x)
+    //do an inorder traversal  (add the size of the list for each node) from x as long as lower than price 2
+    //
     public String[] getStocksInPriceRange(Float price1, Float price2) {
-    // add code here
+        int size = getAmountStocksInPriceRange(price1, price2);
+        String[] stocks = new String[size];
+        return fill(this.Prices.root, price2, stocks, size, 0);
+
     }
 
+    public String[] fill(Node<Stock, Float> x, Float price2, String[] Stocks, int count, int currStock){
+
+        if (x.isLeaf() && x.key <= price2 && x.visited == 0) {
+            int temp = currStock;
+            for (int j = temp; x.list.size > 0; x.list.size--, j++, temp++) {
+                Stocks[j] = x.list.head.data.stockId;
+                x.list.head.next.prev = null;
+                x.list.head = x.list.head.next;
+            }
+            x.visited = 1;
+            currStock= temp;
+            if(x==x.parentPrice.leftPrice){// left child
+                if (x.parentPrice.rightPrice== null && x.parentPrice.midPrice != null){fill(x.parentPrice.midPrice, price2, Stocks,count,currStock);}
+                else if (x.parentPrice.midPrice != null){
+                    fill(x.parentPrice.midPrice, price2, Stocks,count,currStock);
+                    fill(x.parentPrice.rightPrice, price2,Stocks,count,currStock);
+                }
+            }
+        }
+        //if leaf was visited
+        else if(x.isLeaf() && x.visited == 1){x.visited = 0;}
+
+        else {// if not leaf
+            if (x.leftPrice != null && x.visited == 0) {
+                fill(x.leftPrice, price2, Stocks,count,currStock);
+            }
+            else if(x.leftStock != null && x.visited == 1){x.visited = 0;}
+
+            if (x.midPrice != null && x.visited == 0) {
+                fill(x.midPrice, price2, Stocks,count,currStock);
+            }
+            else if(x.midStock != null && x.visited == 1){x.visited = 0;}
+
+            if (x.rightPrice != null && x.visited == 0) {
+                fill(x.rightPrice, price2, Stocks,count,currStock);
+            }
+            else if(x.rightStock != null && x.visited == 1){x.visited = 0;}
+        }
+        return Stocks;
+    }
 
 }
 

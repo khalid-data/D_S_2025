@@ -1,4 +1,4 @@
-import java.util.Objects;
+/*
 
 public class StockPriceNode {
 
@@ -32,10 +32,10 @@ public class StockPriceNode {
     }
 
     public boolean IsLeaf(){
-        return Objects.equals(this.left.price, MINFLOAT) && Objects.equals(this.mid.price, MAXFLOAT);
+        return this.left.price.equals(MINFLOAT) && this.mid.price.equals(MAXFLOAT);
     }
 
 
 }
+*/
 
-public
