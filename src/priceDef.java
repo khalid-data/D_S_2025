@@ -30,7 +30,7 @@ public class priceDef{
         this.timeStamp = key;
     }
 
-    public void setParent(InternalNode parent) {
+    public void setParent(priceDef parent) {
         this.p = p;
     }
 

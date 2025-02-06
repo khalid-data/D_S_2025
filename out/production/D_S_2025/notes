@@ -1,0 +1,184 @@
+make sure when new node is inserted it's is leaf value is set to true
+when a leaf is no longer a leaf it's is leaf value is set to false
+when leaf is inserted visited should be assigned 0 -- actually not just leafs
+visited should be changed to 0 back again
+or make counter for every time they ask as
+class TwoThreeTree {
+
+    private static class Node {
+        String key1, key2;
+        Node child1, child2, child3;
+        Node parent;
+
+        Node(String key) {
+            this.key1 = key;
+            this.key2 = null;
+            this.child1 = this.child2 = this.child3 = this.parent = null;
+        }
+
+        boolean isLeaf() {
+            return child1 == null && child2 == null && child3 == null;
+        }
+
+        boolean isFull() {
+            return key2 != null;
+        }
+
+        void insertKey(String key) {
+            if (key.compareTo(key1) < 0) {
+                key2 = key1;
+                key1 = key;
+            } else if (key2 == null || key.compareTo(key2) < 0) {
+                key2 = key;
+            }
+        }
+
+        void removeKey(String key) {
+            if (key.equals(key1)) {
+                key1 = key2;
+                key2 = null;
+            } else if (key.equals(key2)) {
+                key2 = null;
+            }
+        }
+
+        Node getChild(String key) {
+            if (key.compareTo(key1) < 0) {
+                return child1;
+            } else if (key2 == null || key.compareTo(key2) < 0) {
+                return child2;
+            } else {
+                return child3;
+            }
+        }
+    }
+
+    private Node root;
+
+    public TwoThreeTree() {
+        root = null;
+    }
+
+    public void add(String key) {
+        if (root == null) {
+            root = new Node(key);
+        } else {
+            Node node = root;
+            while (!node.isLeaf()) {
+                node = node.getChild(key);
+            }
+            if (!node.isFull()) {
+                node.insertKey(key);
+            } else {
+                split(node, key);
+            }
+        }
+    }
+
+    private void split(Node node, String key) {
+        Node parent = node.parent;
+        Node newNode = new Node(key);
+        Node left = new Node(node.key1);
+        Node right = new Node(node.key2);
+
+        if (parent == null) {
+            parent = new Node(node.key1);
+            root = parent;
+        }
+
+        if (node == parent.child1) {
+            parent.child1 = left;
+            parent.child2 = right;
+        } else if (node == parent.child2) {
+            parent.child2 = left;
+            parent.child3 = right;
+        } else {
+            parent.child3 = left;
+            parent.child4 = right;
+        }
+
+        left.parent = parent;
+        right.parent = parent;
+
+        if (key.compareTo(node.key1) < 0) {
+            parent.insertKey(node.key1);
+        } else if (key.compareTo(node.key2) < 0) {
+            parent.insertKey(key);
+        } else {
+            parent.insertKey(node.key2);
+        }
+
+        if (parent.isFull()) {
+            split(parent, key);
+        }
+    }
+
+    public boolean search(String key) {
+        Node node = root;
+        while (node != null) {
+            if (key.equals(node.key1) || key.equals(node.key2)) {
+                return true;
+            }
+            node = node.getChild(key);
+        }
+        return false;
+    }
+
+    public void remove(String key) {
+        if (root == null) {
+            return;
+        }
+        Node node = root;
+        while (!node.isLeaf()) {
+            if (key.equals(node.key1) || key.equals(node.key2)) {
+                break;
+            }
+            node = node.getChild(key);
+        }
+        if (key.equals(node.key1) || key.equals(node.key2)) {
+            node.removeKey(key);
+            if (node.key1 == null && node.key2 == null) {
+                if (node == root) {
+                    root = null;
+                } else {
+                    merge(node);
+                }
+            }
+        }
+    }
+
+    private void merge(Node node) {
+        Node parent = node.parent;
+        if (parent == null) {
+            return;
+        }
+        if (parent.child1 == node) {
+            parent.child1 = parent.child2;
+            parent.child2 = parent.child3;
+            parent.child3 = null;
+        } else if (parent.child2 == node) {
+            parent.child2 = parent.child3;
+            parent.child3 = null;
+        } else {
+            parent.child3 = null;
+        }
+        if (parent.key2 == null) {
+            merge(parent);
+        }
+    }
+
+    public static void main(String[] args) {
+        TwoThreeTree tree = new TwoThreeTree();
+        tree.add("apple");
+        tree.add("banana");
+        tree.add("cherry");
+        tree.add("date");
+        tree.add("elderberry");
+
+        System.out.println("Search for 'banana': " + tree.search("banana")); // true
+        System.out.println("Search for 'fig': " + tree.search("fig")); // false
+
+        tree.remove("banana");
+        System.out.println("Search for 'banana' after removal: " + tree.search("banana")); // false
+    }
+}
